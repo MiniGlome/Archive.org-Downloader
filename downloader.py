@@ -74,7 +74,7 @@ def loan(session, book_id, verbose=True):
 		print(response.text)
 		exit()
 
-def download(session, directory, links, scale):
+def download(session, directory, links, scale, book_id):
 	headers = {
 		"Referer": "https://archive.org/",
 		"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -89,6 +89,9 @@ def download(session, directory, links, scale):
 		while retry:
 			try:
 				response = session.get(f"{links[i]}&rotate=0&scale={scale}", headers=headers)
+				if response.status_code == 403:
+					session = loan(session, book_id, verbose=False)
+					raise Exception("Borrow again")
 				retry = False
 			except:
 				# print(" Timeout, retrying in 1s")
@@ -119,7 +122,7 @@ if __name__ == "__main__":
 		session = login(email, password)
 		session = loan(session, book_id)
 		title, links = get_book_infos(session, url)
-		images = download(session, directory, links, scale)
+		images = download(session, directory, links, scale, book_id)
 		pdf = img2pdf.convert(images)
 
 	make_pdf(pdf, title)
