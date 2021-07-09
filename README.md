@@ -68,5 +68,5 @@ python3 downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archiv
 
 If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `--file`
 ```sh
-python3 downloader.py -e myemail@tempmail.com -p Passw0rd -f books_to_download.txt
+python3 downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
 ```
