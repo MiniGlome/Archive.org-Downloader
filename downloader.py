@@ -79,8 +79,8 @@ def return_loan(session, book_id):
 		"action": "return_loan",
 		"identifier": book_id
 	}
-	r = session.post("https://archive.org/details/horrorgamispooky0000bidd_m7r1", data=data)
-	if r.status_code == 200:
+	r = session.post("https://archive.org/services/loans/loan/", data=data)
+	if r.status_code == 200 and r.json()["success"]:
 		print("[+] Book returned")
 	else:
 		print("Something went wrong when trying to return the book")
