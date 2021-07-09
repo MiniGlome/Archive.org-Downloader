@@ -1,17 +1,17 @@
 import requests
 import random, string
-import json
 from tqdm import tqdm
 import img2pdf
 import time
-import tempfile
-
+import argparse
+import os
+import shutil
 
 def get_book_infos(session, url):
 	r = session.get(url).text
 	infos_url = "https:" + r[r.find('url:')+6 : r.find('type:')-21]
 	response = session.get(infos_url)
-	data = json.loads(response.text)['data']
+	data = response.json()['data']
 	title = "".join([c for c in data['brOptions']['bookTitle'] if c in string.ascii_letters+string.digits+" "]).strip()
 	links = []
 	for item in data['brOptions']['data']:
@@ -42,13 +42,13 @@ def login(email, password):
 
 	response = session.post("https://archive.org/account/login", data=data, headers=headers)
 	if "bad_login" in response.text:
-		print("[-] Invalid credentials !")
+		print("[-] Invalid credentials!")
 		exit()
 	elif "Successful login" in response.text:
 		print("[+] Successful login")
 		return session
 	else:
-		print("[-] Error while login :")
+		print("[-] Error while login:")
 		print(response)
 		print(response.text)
 		exit()
@@ -74,6 +74,20 @@ def loan(session, book_id, verbose=True):
 		print(response.text)
 		exit()
 
+def return_loan(session, book_id):
+	data = {
+		"action": "return_loan",
+		"identifier": book_id
+	}
+	r = session.post("https://archive.org/details/horrorgamispooky0000bidd_m7r1", data=data)
+	if r.status_code == 200:
+		print("[+] Book returned")
+	else:
+		print("Something went wrong when trying to return the book")
+		print(r)
+		print(r.text)
+		exit()
+
 def download(session, directory, links, scale, book_id):
 	headers = {
 		"Referer": "https://archive.org/",
@@ -94,7 +108,6 @@ def download(session, directory, links, scale, book_id):
 					raise Exception("Borrow again")
 				retry = False
 			except:
-				# print(" Timeout, retrying in 1s")
 				time.sleep(1)	# Wait 1 second before retrying
 		image = f"{directory}/{i}.jpg"
 		with open(image,"wb") as f:
@@ -103,27 +116,54 @@ def download(session, directory, links, scale, book_id):
 
 	return images
 
-
 def make_pdf(pdf, title):
 	with open(f"{title}.pdf","wb") as f:
 	    f.write(pdf)
 	print(f"[+] PDF saved as \"{title}.pdf\"")
 
+
 if __name__ == "__main__":
 
-	email = input("Enter your email : ")
-	password = input("Enter your password : ")
-	url = input("Link to the book (https://archive.org/details/XXXX) : ")
-	scale = int(input("Image resolution (10 to 0, 0 is the highest), [default 3] : ") or "3")	
-	book_id = url.split("/")[-1]
-	print("="*40)
+	my_parser = argparse.ArgumentParser()
+	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
+	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
+	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str, required=True)
+	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
+	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather then a PDF", action='store_true')
+	args = my_parser.parse_args()
 
-	with tempfile.TemporaryDirectory() as directory:
-		session = login(email, password)
+	email = args.email
+	password = args.password
+	scale = args.resolution
+
+	# Check the urls format
+	for url in args.url:
+		if not url.startswith("https://archive.org/details/"):
+			print(f"{url} --> Invalid url. URL must starts with \"https://archive.org/details/\"")
+			exit()
+
+	session = login(email, password)
+
+	for url in args.url:
+		book_id = url.split("/")[-1]
+		print("="*40)
+		print(f"Current book: {url}")
 		session = loan(session, book_id)
 		title, links = get_book_infos(session, url)
-		images = download(session, directory, links, scale, book_id)
-		pdf = img2pdf.convert(images)
 
-	make_pdf(pdf, title)
+		directory = os.path.join(os.getcwd(), title)
+		if not os.path.isdir(directory):
+			os.makedirs(directory)
+
+		images = download(session, directory, links, scale, book_id)
+
+		if not args.jpg: # Create pdf with images and remove the images folder
+			pdf = img2pdf.convert(images)
+			make_pdf(pdf, title)
+			try:
+				shutil.rmtree(directory)
+			except OSError as e:
+				print ("Error: %s - %s." % (e.filename, e.strerror))
+
+		return_loan(session, book_id)
 
