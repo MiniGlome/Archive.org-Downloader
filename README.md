@@ -41,7 +41,27 @@ Make sure you've already git installed. Then you can run the following commands 
    
 ## Usage
 ```sh
-python3 downloader.py
+usage: downloader.py [-h] -e EMAIL -p PASSWORD -u URL [-r RESOLUTION] [-j]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e EMAIL, --email EMAIL
+                        Your archive.org email
+  -p PASSWORD, --password PASSWORD
+                        Your archive.org password
+  -u URL, --url URL     Link to the book (https://archive.org/details/XXXX). You can use this argument several times
+                        to download multiple books
+  -r RESOLUTION, --resolution RESOLUTION
+                        Image resolution (10 to 0, 0 is the highest), [default 3]
+  -j, --jpg             Output to individual JPG's rather then a PDF
 ```
-You will be asked to enter an email and password to login to archive.org. Then enter the link to the book you want to download and specify the resolution of the images (0 is the best quality).
-The PDF is downloaded in the current folder
+The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
+The `-r` argument specifies the resolution of the images (0 is the best quality).
+The PDF are downloaded in the current folder
+
+### Example
+```sh
+python3 downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
+```
+This command will download the 3 books as pdf in the best possible quality. To only downlaod the individual images you can use `--jpg`.
+
