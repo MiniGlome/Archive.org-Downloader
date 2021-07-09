@@ -41,7 +41,7 @@ Make sure you've already git installed. Then you can run the following commands 
    
 ## Usage
 ```sh
-usage: downloader.py [-h] -e EMAIL -p PASSWORD -u URL [-r RESOLUTION] [-j]
+usage: downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-f FILE] [-r RESOLUTION] [-j]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -51,6 +51,7 @@ optional arguments:
                         Your archive.org password
   -u URL, --url URL     Link to the book (https://archive.org/details/XXXX). You can use this argument several times
                         to download multiple books
+  -f FILE, --file FILE  File where are stored the URLs of the books to download
   -r RESOLUTION, --resolution RESOLUTION
                         Image resolution (10 to 0, 0 is the highest), [default 3]
   -j, --jpg             Output to individual JPG's rather then a PDF
@@ -60,8 +61,12 @@ The `-r` argument specifies the resolution of the images (0 is the best quality)
 The PDF are downloaded in the current folder
 
 ### Example
+This command will download the 3 books as pdf in the best possible quality. To only downlaod the individual images you can use `--jpg`.
 ```sh
 python3 downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
 ```
-This command will download the 3 books as pdf in the best possible quality. To only downlaod the individual images you can use `--jpg`.
 
+If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `--file`
+```sh
+python3 downloader.py -e myemail@tempmail.com -p Passw0rd -f books_to_download.txt
+```
