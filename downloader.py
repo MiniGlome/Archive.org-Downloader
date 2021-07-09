@@ -69,7 +69,7 @@ def loan(session, book_id, verbose=True):
 			print("[+] Successful loan")
 		return session
 	else:
-		print("Something went wrong when trying to borrow the book")
+		print("Something went wrong when trying to borrow the book, maybe you can't borrow this book")
 		print(response)
 		print(response.text)
 		exit()
@@ -106,7 +106,8 @@ def download(session, directory, links, scale, book_id):
 				if response.status_code == 403:
 					session = loan(session, book_id, verbose=False)
 					raise Exception("Borrow again")
-				retry = False
+				elif response.status_code == 200:
+					retry = False
 			except:
 				time.sleep(1)	# Wait 1 second before retrying
 		image = f"{directory}/{i}.jpg"
@@ -127,24 +128,38 @@ if __name__ == "__main__":
 	my_parser = argparse.ArgumentParser()
 	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
 	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
-	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str, required=True)
+	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str)
+	my_parser.add_argument('-f', '--file', help='File where are stored the URLs of the books to download', type=str)
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather then a PDF", action='store_true')
 	args = my_parser.parse_args()
+
+	if args.url is None and args.file is None:
+		my_parser.error("At least one of --url and --file required")
 
 	email = args.email
 	password = args.password
 	scale = args.resolution
 
+	if args.url:
+		urls = args.url
+	else:
+		if os.path.exists(args.file):
+			with open(args.file) as f:
+				urls = f.read().strip().split("\n")
+		else:
+			print(f"{args.file} does not exist!")
+
 	# Check the urls format
-	for url in args.url:
+	for url in urls:
 		if not url.startswith("https://archive.org/details/"):
 			print(f"{url} --> Invalid url. URL must starts with \"https://archive.org/details/\"")
 			exit()
 
+	print(f"{len(urls)} Book(s) to download")
 	session = login(email, password)
 
-	for url in args.url:
+	for url in urls:
 		book_id = url.split("/")[-1]
 		print("="*40)
 		print(f"Current book: {url}")
