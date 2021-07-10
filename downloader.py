@@ -6,6 +6,7 @@ import time
 import argparse
 import os
 import shutil
+from concurrent import futures
 
 def get_book_infos(session, url):
 	r = session.get(url).text
@@ -88,7 +89,7 @@ def return_loan(session, book_id):
 		print(r.text)
 		exit()
 
-def download(session, directory, links, scale, book_id):
+def download_one_image(session, link, i, directory, book_id):
 	headers = {
 		"Referer": "https://archive.org/",
 		"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -96,30 +97,41 @@ def download(session, directory, links, scale, book_id):
 		"Sec-Fetch-Mode": "no-cors",
 		"Sec-Fetch-Dest": "image",
 	}
-	print("Donwloading pages...")
-	images = []
-	for i in tqdm(range(len(links))):
-		retry = True
-		while retry:
-			try:
-				response = session.get(f"{links[i]}&rotate=0&scale={scale}", headers=headers)
-				if response.status_code == 403:
-					session = loan(session, book_id, verbose=False)
-					raise Exception("Borrow again")
-				elif response.status_code == 200:
-					retry = False
-			except:
-				time.sleep(1)	# Wait 1 second before retrying
-		image = f"{directory}/{i}.jpg"
-		with open(image,"wb") as f:
-			f.write(response.content)
-		images.append(image)
+	retry = True
+	while retry:
+		try:
+			response = session.get(link, headers=headers)
+			if response.status_code == 403:
+				session = loan(session, book_id, verbose=False)
+				raise Exception("Borrow again")
+			elif response.status_code == 200:
+				retry = False
+		except:
+			time.sleep(1)	# Wait 1 second before retrying
 
+	image = f"{directory}/{i}.jpg"
+	with open(image,"wb") as f:
+		f.write(response.content)
+
+
+def download(session, n_threads, directory, links, scale, book_id):	
+	print("Donwloading pages...")
+	links = [f"{link}&rotate=0&scale={scale}" for link in links]
+
+	tasks = []
+	with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
+		for link in links:
+			i = links.index(link)
+			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory ,book_id=book_id))
+		for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
+			pass
+	
+	images = [f"{directory}/{i}.jpg" for i in range(len(links))]
 	return images
 
 def make_pdf(pdf, title):
 	with open(f"{title}.pdf","wb") as f:
-	    f.write(pdf)
+		f.write(pdf)
 	print(f"[+] PDF saved as \"{title}.pdf\"")
 
 
@@ -131,6 +143,7 @@ if __name__ == "__main__":
 	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str)
 	my_parser.add_argument('-f', '--file', help='File where are stored the URLs of the books to download', type=str)
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
+	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather then a PDF", action='store_true')
 	args = my_parser.parse_args()
 
@@ -140,8 +153,9 @@ if __name__ == "__main__":
 	email = args.email
 	password = args.password
 	scale = args.resolution
+	n_threads = args.threads
 
-	if args.url:
+	if args.url is not None:
 		urls = args.url
 	else:
 		if os.path.exists(args.file):
@@ -149,6 +163,7 @@ if __name__ == "__main__":
 				urls = f.read().strip().split("\n")
 		else:
 			print(f"{args.file} does not exist!")
+			exit()
 
 	# Check the urls format
 	for url in urls:
@@ -170,7 +185,7 @@ if __name__ == "__main__":
 		if not os.path.isdir(directory):
 			os.makedirs(directory)
 
-		images = download(session, directory, links, scale, book_id)
+		images = download(session, n_threads, directory, links, scale, book_id)
 
 		if not args.jpg: # Create pdf with images and remove the images folder
 			pdf = img2pdf.convert(images)
