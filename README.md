@@ -41,7 +41,7 @@ Make sure you've already git installed. Then you can run the following commands 
    
 ## Usage
 ```sh
-usage: downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-f FILE] [-r RESOLUTION] [-j]
+usage: downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-f FILE] [-r RESOLUTION] [-t THREADS] [-j]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -49,11 +49,13 @@ optional arguments:
                         Your archive.org email
   -p PASSWORD, --password PASSWORD
                         Your archive.org password
-  -u URL, --url URL     Link to the book (https://archive.org/details/XXXX). You can use this argument several times
-                        to download multiple books
+  -u URL, --url URL     Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download
+                        multiple books
   -f FILE, --file FILE  File where are stored the URLs of the books to download
   -r RESOLUTION, --resolution RESOLUTION
                         Image resolution (10 to 0, 0 is the highest), [default 3]
+  -t THREADS, --threads THREADS
+                        Maximum number of threads, [default 50]
   -j, --jpg             Output to individual JPG's rather then a PDF
 ```
 The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
