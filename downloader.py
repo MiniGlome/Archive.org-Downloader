@@ -1,12 +1,13 @@
 import requests
 import random, string
+from concurrent import futures
 from tqdm import tqdm
 import img2pdf
 import time
 import argparse
 import os
 import shutil
-from concurrent import futures
+
 
 def get_book_infos(session, url):
 	r = session.get(url).text
@@ -130,7 +131,14 @@ def download(session, n_threads, directory, links, scale, book_id):
 	return images
 
 def make_pdf(pdf, title):
-	with open(f"{title}.pdf","wb") as f:
+	file = title+".pdf"
+	# Handle the case where multiple books with the same name are downloaded
+	i = 1
+	while os.path.isfile(file):
+		file = f"{title}({i}).pdf"
+		i += 1
+
+	with open(file,"wb") as f:
 		f.write(pdf)
 	print(f"[+] PDF saved as \"{title}.pdf\"")
 
