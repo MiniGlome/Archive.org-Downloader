@@ -116,7 +116,7 @@ def download_one_image(session, link, i, directory, book_id):
 
 
 def download(session, n_threads, directory, links, scale, book_id):	
-	print("Donwloading pages...")
+	print("Downloading pages...")
 	links = [f"{link}&rotate=0&scale={scale}" for link in links]
 
 	tasks = []
