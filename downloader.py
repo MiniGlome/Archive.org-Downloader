@@ -183,7 +183,7 @@ if __name__ == "__main__":
 	session = login(email, password)
 
 	for url in urls:
-		book_id = url.split("/")[-1]
+		book_id = list(filter(None, url.split("/")))[-1]
 		print("="*40)
 		print(f"Current book: {url}")
 		session = loan(session, book_id)
