@@ -15,7 +15,7 @@ def get_book_infos(session, url):
 	response = session.get(infos_url)
 	data = response.json()['data']
 	title = "".join([c for c in data['brOptions']['bookTitle'] if c in string.ascii_letters+string.digits+" "]).strip()
-	title = title[:250] # Trim the title to avoid exceeding the 255 chars limit of the files name on macOS
+	title = title[:245] # Trim the title to avoid long file names
 	links = []
 	for item in data['brOptions']['data']:
 		for page in item:
