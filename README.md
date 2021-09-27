@@ -24,20 +24,16 @@ Of course, the download takes a few minutes depending on the number of pages and
 ## Getting Started
 To get started you need to have python3 installed. If it is not the case you can download it here : https://www.python.org/downloads/
 
-### Prerequisites
-To run the the script you need install the python modules `requests`, `tqdm`, `img2pdf` with these commands :
-```sh
-pip install requests
-pip install tqdm
-pip install img2pdf
-```
-
 ### Installation
 Make sure you've already git installed. Then you can run the following commands to get the scripts on your computer:
    ```sh
    git clone https://github.com/MiniGlome/Archive.org-Downloader.git
    cd Archive.org-Downloader
    ```
+The script requires the modules `requests`, `tqdm` and `img2pdf`, you can install them all at once with this command:
+```sh
+pip install -r requirements
+```
    
 ## Usage
 ```sh
