@@ -32,7 +32,7 @@ Make sure you've already git installed. Then you can run the following commands 
    ```
 The script requires the modules `requests`, `tqdm` and `img2pdf`, you can install them all at once with this command:
 ```sh
-pip install -r requirements
+pip install -r requirements.txt
 ```
    
 ## Usage
