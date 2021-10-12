@@ -16,7 +16,7 @@ def get_book_infos(session, url):
 	infos_url = "https:" + r[r.find('url:')+6 : r.find('type:')-21]
 	response = session.get(infos_url)
 	data = response.json()['data']
-	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
+	title = data['brOptions']['bookTitle'].strip()
 	title = title[:245] # Trim the title to avoid long file names
 	links = []
 	for item in data['brOptions']['data']:
