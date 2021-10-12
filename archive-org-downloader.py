@@ -193,8 +193,19 @@ if __name__ == "__main__":
 		title, links = get_book_infos(session, url)
 
 		directory = os.path.join(os.getcwd(), title)
-		if not os.path.isdir(directory):
-			os.makedirs(directory)
+
+		# TODO check this before loan
+		if os.path.exists(directory):
+			print(f"Error: output directory exists: {directory}\nskipping download")
+			return_loan(session, book_id)
+			continue
+
+		if not args.jpg and os.path.exists(f"{directory}.pdf"):
+			print(f"Error: output file exists: {directory}.pdf\nskipping download")
+			return_loan(session, book_id)
+			continue
+
+		os.makedirs(directory)
 
 		images = download(session, n_threads, directory, links, scale, book_id)
 
