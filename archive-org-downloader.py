@@ -8,6 +8,7 @@ import img2pdf
 import time
 import argparse
 import os
+import sys
 import shutil
 
 
@@ -156,6 +157,9 @@ if __name__ == "__main__":
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather then a PDF", action='store_true')
+	if len(sys.argv) == 1:
+		my_parser.print_help(sys.stderr)
+		sys.exit(1)
 	args = my_parser.parse_args()
 
 	if args.url is None and args.file is None:
