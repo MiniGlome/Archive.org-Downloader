@@ -18,7 +18,8 @@ def get_book_infos(session, url):
 	response = session.get(infos_url)
 	data = response.json()['data']
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
-	title = title[:245] # Trim the title to avoid long file names
+	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
+	title = title[:150] # Trim the title to avoid long file names	
 	links = []
 	for item in data['brOptions']['data']:
 		for page in item:
