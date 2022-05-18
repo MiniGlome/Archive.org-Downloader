@@ -135,18 +135,17 @@ def download(session, n_threads, directory, links, scale, book_id):
 	images = [f"{directory}/{i}.jpg" for i in range(len(links))]
 	return images
 
-def make_pdf(pdf, title):
+def make_pdf(pdf, title, directory):
 	file = title+".pdf"
 	# Handle the case where multiple books with the same name are downloaded
 	i = 1
-	while os.path.isfile(file):
+	while os.path.isfile(os.path.join(directory, file)):
 		file = f"{title}({i}).pdf"
 		i += 1
 
-	with open(file,"wb") as f:
+	with open(os.path.join(directory, file),"wb") as f:
 		f.write(pdf)
-	print(f"[+] PDF saved as \"{title}.pdf\"")
-
+	print(f"[+] PDF saved as \"{file}\"")
 
 if __name__ == "__main__":
 
@@ -154,10 +153,12 @@ if __name__ == "__main__":
 	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
 	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
 	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str)
+	my_parser.add_argument('-d', '--dir', help='Output directory', type=str)
 	my_parser.add_argument('-f', '--file', help='File where are stored the URLs of the books to download', type=str)
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather then a PDF", action='store_true')
+
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
 		sys.exit(1)
@@ -170,6 +171,13 @@ if __name__ == "__main__":
 	password = args.password
 	scale = args.resolution
 	n_threads = args.threads
+	directory = args.dir
+
+	if directory == None:
+		directory = os.getcwd()
+	elif not os.path.isdir(directory):
+		print(f"Output directory does not exist!")
+		exit()
 
 	if args.url is not None:
 		urls = args.url
@@ -197,11 +205,12 @@ if __name__ == "__main__":
 		session = loan(session, book_id)
 		title, links = get_book_infos(session, url)
 
-		directory = os.path.join(os.getcwd(), title)
+		directory = os.path.join(directory, title)
 		# Handle the case where multiple books with the same name are downloaded
 		i = 1
+		d = directory
 		while os.path.isdir(directory):
-			directory = f"{directory}({i})"
+			directory = f"{d}({i})"
 			i += 1
 		os.makedirs(directory)
 
@@ -209,7 +218,7 @@ if __name__ == "__main__":
 
 		if not args.jpg: # Create pdf with images and remove the images folder
 			pdf = img2pdf.convert(images)
-			make_pdf(pdf, title)
+			make_pdf(pdf, title, args.dir if args.dir != None else "")
 			try:
 				shutil.rmtree(directory)
 			except OSError as e:
