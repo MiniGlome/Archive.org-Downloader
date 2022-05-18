@@ -198,8 +198,12 @@ if __name__ == "__main__":
 		title, links = get_book_infos(session, url)
 
 		directory = os.path.join(os.getcwd(), title)
-		if not os.path.isdir(directory):
-			os.makedirs(directory)
+		# Handle the case where multiple books with the same name are downloaded
+		i = 1
+		while os.path.isdir(directory):
+			directory = f"{directory}({i})"
+			i += 1
+		os.makedirs(directory)
 
 		images = download(session, n_threads, directory, links, scale, book_id)
 
