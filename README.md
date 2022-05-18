@@ -68,3 +68,10 @@ If you want to download a lot of books in a raw you can paste the urls of the bo
 ```sh
 python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
 ```
+
+## Donation
+If you want to support my work, you can send 2 or 3 Bitcoins 🙃 to this address: 
+```
+bc1q4nq8tjuezssy74d5amnrrq6ljvu7hd3l880m7l
+```
+![bitcoin_address](https://user-images.githubusercontent.com/54740007/169100171-1061c7a0-207e-459b-84de-2d6bb93b0f38.png)
