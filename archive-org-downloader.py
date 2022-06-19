@@ -11,6 +11,11 @@ import os
 import sys
 import shutil
 
+def display_error(response, message):
+	print(message)
+	print(response)
+	print(response.text)
+	exit()
 
 def get_book_infos(session, url):
 	r = session.get(url).text
@@ -55,10 +60,7 @@ def login(email, password):
 		print("[+] Successful login")
 		return session
 	else:
-		print("[-] Error while login:")
-		print(response)
-		print(response.text)
-		exit()
+		display_error(response, "[-] Error while login:")
 
 def loan(session, book_id, verbose=True):
 	data = {
@@ -68,6 +70,14 @@ def loan(session, book_id, verbose=True):
 	response = session.post("https://archive.org/services/loans/loan/searchInside.php", data=data)
 	data['action'] = "browse_book"
 	response = session.post("https://archive.org/services/loans/loan/", data=data)
+
+	if response.status_code == 400 :
+		if response.json()["error"] == "This book is not available to borrow at this time. Please try again later.":
+			print("This book doesn't need to be borrowed")
+			return session
+		else :
+			display_error(response, "Something went wrong when trying to borrow the book.")
+
 	data['action'] = "create_token"
 	response = session.post("https://archive.org/services/loans/loan/", data=data)
 
@@ -76,24 +86,18 @@ def loan(session, book_id, verbose=True):
 			print("[+] Successful loan")
 		return session
 	else:
-		print("Something went wrong when trying to borrow the book, maybe you can't borrow this book")
-		print(response)
-		print(response.text)
-		exit()
+		display_error(response, "Something went wrong when trying to borrow the book, maybe you can't borrow this book.")
 
 def return_loan(session, book_id):
 	data = {
 		"action": "return_loan",
 		"identifier": book_id
 	}
-	r = session.post("https://archive.org/services/loans/loan/", data=data)
-	if r.status_code == 200 and r.json()["success"]:
+	response = session.post("https://archive.org/services/loans/loan/", data=data)
+	if response.status_code == 200 and response.json()["success"]:
 		print("[+] Book returned")
 	else:
-		print("Something went wrong when trying to return the book")
-		print(r)
-		print(r.text)
-		exit()
+		display_error(response, "Something went wrong when trying to return the book")
 
 def download_one_image(session, link, i, directory, book_id):
 	headers = {
