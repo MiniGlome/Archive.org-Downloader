@@ -161,7 +161,7 @@ if __name__ == "__main__":
 	my_parser.add_argument('-f', '--file', help='File where are stored the URLs of the books to download', type=str)
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
-	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather then a PDF", action='store_true')
+	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
 
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
@@ -203,9 +203,9 @@ if __name__ == "__main__":
 	session = login(email, password)
 
 	for url in urls:
-		book_id = list(filter(None, url.split("/")))[-1]
+		book_id = list(filter(None, url.split("/")))[3]
 		print("="*40)
-		print(f"Current book: {url}")
+		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
 		title, links = get_book_infos(session, url)
 
