@@ -4,7 +4,6 @@ import requests
 import random, string
 from concurrent import futures
 from tqdm import tqdm
-import img2pdf
 import time
 import argparse
 import os
@@ -221,6 +220,7 @@ if __name__ == "__main__":
 		images = download(session, n_threads, directory, links, scale, book_id)
 
 		if not args.jpg: # Create pdf with images and remove the images folder
+			import img2pdf
 			pdf = img2pdf.convert(images)
 			make_pdf(pdf, title, args.dir if args.dir != None else "")
 			try:
