@@ -37,7 +37,9 @@ pip install -r requirements.txt
    
 ## Usage
 ```sh
-usage: archive-org-downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-d DIR] [-f FILE] [-r RESOLUTION] [-t THREADS] [-j]
+usage: archive-org-downloader.py [-h] [-e EMAIL] [-p PASSWORD] [-s SKIP_LOGIN]
+                                 [-u URL] [-d DIR] [-f FILE] [-r RESOLUTION]
+                                 [-t THREADS] [-j]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -45,15 +47,24 @@ optional arguments:
                         Your archive.org email
   -p PASSWORD, --password PASSWORD
                         Your archive.org password
-  -u URL, --url URL     Link to the book (https://archive.org/details/XXXX). You can use this argument several times
-                        to download multiple books
+  -s SKIP_LOGIN, --skip_login SKIP_LOGIN
+                        Use this if you want to download books which do not
+                        need to be borrowed.
+  -u URL, --url URL     Link to the book (https://archive.org/details/XXXX).
+                        You can use this argument several times to download
+                        multiple books
   -d DIR, --dir DIR     Output directory
-  -f FILE, --file FILE  File where are stored the URLs of the books to download
+  -f FILE, --file FILE  File where are stored the URLs of the books to
+                        download
   -r RESOLUTION, --resolution RESOLUTION
-                        Image resolution (10 to 0, 0 is the highest), [default 3]
+                        Image resolution (10 to 0, 0 is the highest), [default
+                        3]
   -t THREADS, --threads THREADS
                         Maximum number of threads, [default 50]
-  -j, --jpg             Output to individual JPG's rather then a PDF
+  -j, --jpg             Output to individual JPG's rather than a PDF
+
+Process finished with exit code 0
+
 ```
 The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
 The `-r` argument specifies the resolution of the images (0 is the best quality).
