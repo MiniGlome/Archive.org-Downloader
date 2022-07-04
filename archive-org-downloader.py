@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 from typing import Tuple
 
 import requests
@@ -58,7 +59,7 @@ def login(email: str, password: str) -> Session:
 
 
 def loan(session: Session, book_id: str, verbose: bool = True) -> Tuple[Session, bool]:
-    print('Lending book...')
+    print('Loaning book...')
     data = {
         "action": "grant_access",
         "identifier": book_id
@@ -87,6 +88,7 @@ def loan(session: Session, book_id: str, verbose: bool = True) -> Tuple[Session,
 
 
 def return_loan(session: Session, book_id: str):
+    print('Returning book...')
     data = {
         "action": "return_loan",
         "identifier": book_id
@@ -143,6 +145,7 @@ def download(session: Session, hasLoanedBook: bool, n_threads, directory, links:
 
 
 def make_pdf(pdf, title, directory):
+    print('Creating PDF...')
     file = title + ".pdf"
     # Handle the case where multiple books with the same name are downloaded
     i = 1
@@ -168,6 +171,7 @@ if __name__ == "__main__":
     my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
     my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
     my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
+    my_parser.add_argument('-l', '--loan_always', help='Always try to loan all added books. Can improve speed if you\'re planning to download only books that need to be loaned.', type=bool, default=False, required=False)
 
     if len(sys.argv) == 1:
         my_parser.print_help(sys.stderr)
@@ -210,8 +214,8 @@ if __name__ == "__main__":
 
     # Check the urls format
     for url in urls:
-        if not url.startswith("https://archive.org/details/"):
-            print(f"{url} --> Invalid url. URL must starts with \"https://archive.org/details/\"")
+        if not re.search(r'https?://(www\.)?archive\.org/details/.+', url):
+            print(f"{url} --> Invalid url")
             exit()
 
     print(f"Found {len(urls)} book(s) to download with resolution {scale}")
@@ -228,18 +232,31 @@ if __name__ == "__main__":
         book_id = list(filter(None, url.split("/")))[3]
         print("=" * 40)
         print(f"Downloading book {bookCounter}/{len(urls)}: {url}")
-        if isLoggedIN:
+        hasLoanedBook = False
+        if args.loan_always:
             session, hasLoanedBook = loan(session, book_id)
+            data = get_book_infos(session, url)
         else:
-            hasLoanedBook = False
-        data = get_book_infos(session, url)
-        lendingInfo = data['lendingInfo']
-        # Example book with no lending required: https://archive.org/details/IntermediatePython
-        if lendingInfo['isLendingRequired'] and not isLoggedIN:
-            # Example: https://archive.org/details/sim_interview_1998-11_28_11
-            # We could download the preview pages of such books but this would kinda defeat the purose of this script
-            print(f"[-] Cannot download this book without login credentials: {url}")
-            exit()
+            # Check if book needs to be loaned and loan it
+            hasAttemptedToLoanBook = False
+            while True:
+                data = get_book_infos(session, url)
+                lendingInfo = data['lendingInfo']
+                if hasAttemptedToLoanBook:
+                    break
+                # Example book with no lending required: https://archive.org/details/IntermediatePython
+                if lendingInfo['isLendingRequired']:
+                    if not isLoggedIN:
+                        # Example: https://archive.org/details/sim_interview_1998-11_28_11
+                        # We could download the preview pages of such books but this would kinda defeat the purose of this script
+                        print(f"[-] Cannot download this book without login credentials")
+                        exit()
+                    session, hasLoanedBook = loan(session, book_id)
+                    hasAttemptedToLoanBook = True
+                    continue
+                else:
+                    hasLoanedBook = False
+                    break
         title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
         title = ''.join(c for c in title if c not in '<>:"/\\|?*')  # Filter forbidden chars in directory names (for Windows users)
         title = title[:150]  # Trim the title to avoid long file names
@@ -268,7 +285,7 @@ if __name__ == "__main__":
             import img2pdf
 
             pdf = img2pdf.convert(images)
-            make_pdf(pdf, title, args.dir if args.dir != None else "")
+            make_pdf(pdf, title, args.dir if args.dir is not None else "")
             try:
                 shutil.rmtree(directory)
             except OSError as e:
@@ -277,3 +294,5 @@ if __name__ == "__main__":
         if hasLoanedBook:
             return_loan(session, book_id)
         bookCounter += 1
+    print("=" * 40)
+    print('All done!')

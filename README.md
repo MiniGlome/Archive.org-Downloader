@@ -16,7 +16,7 @@
 
 ## About The Project
 
-There are many great books available on https://openlibrary.org/ and https://archive.org/, however, you can only borrow them for 1 hour to 14 days and you don't have the option to download it as a PDF to read it offline or share it with your friends. I created this program to solve this problem and retrieve the original book in pdf format for FREE !
+There are many great books available on https://openlibrary.org/ and https://archive.org/, however, many of them need to be borrowed and you can only borrow them for 1 hour to 14 days and you don't have the option to download it as a PDF to read it offline or share it with your friends. I created this program to solve this problem and retrieve the original book in pdf format for FREE !
 
 Of course, the download takes a few minutes depending on the number of pages and the quality of the images you have selected. You must also create an account on https://archive.org/ for the script to work.
 
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 ```sh
 usage: archive-org-downloader.py [-h] [-e EMAIL] [-p PASSWORD] [-s SKIP_LOGIN]
                                  [-u URL] [-d DIR] [-f FILE] [-r RESOLUTION]
-                                 [-t THREADS] [-j]
+                                 [-t THREADS] [-j] [-l LOAN_ALWAYS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -62,19 +62,26 @@ optional arguments:
   -t THREADS, --threads THREADS
                         Maximum number of threads, [default 50]
   -j, --jpg             Output to individual JPG's rather than a PDF
-
-Process finished with exit code 0
-
+  -l LOAN_ALWAYS, --loan_always LOAN_ALWAYS
+                        Always try to loan all added books. Can improve speed
+                        if you're planning to download only books that need to
+                        be loaned.
 ```
-The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
+The `email` and `password` fields are required if the books you want to download need to be borrowed.
 The `-r` argument specifies the resolution of the images (0 is the best quality).
-The PDF are downloaded in the current folder
+The PDF are saved in the current folder
 
 ### Example
 This command will download the 3 books as pdf in the best possible quality. To only downlaod the individual images you can use `--jpg`.
 ```sh
-python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
+python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/sim_interview_1998-11_28_11 -u https://archive.org/details/sim_interview_1998-05_28_5 -u https://archive.org/details/sim_interview_1997-11_27_11
 ```
+
+This command will allow you to download books which do not need to be borrowed without owning an archive.org account:
+```sh
+python3 archive-org-downloader.py -s true -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/jstor-4560629 -u https://archive.org/details/jstor-41455353
+```
+
 
 If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `--file`
 ```sh
