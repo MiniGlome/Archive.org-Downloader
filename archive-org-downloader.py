@@ -184,9 +184,13 @@ if __name__ == "__main__":
     email = args.email
     password = args.password
     skip_login = args.skip_login
+    loginCredentialsAreAvailable = email is not None and password is not None
 
-    if not skip_login and (email is None or password is None):
-        print('Email/Password not given. Either provide email and password or use \'-s\' to skip login if you want to download books which do not need to be borrowed.')
+    if not skip_login and not loginCredentialsAreAvailable:
+        print('Warning: Email/Password not given. Either provide email and password or use \'-s true\' to skip login if you only want to download books which do not need to be borrowed.')
+        sys.exit(1)
+    elif args.loan_always and not loginCredentialsAreAvailable:
+        print('Warning: \'loan_always\' and \'skip_login\' parameters are both True while email/password is not given. Either provide email and password or remove \'loan_always\' parameter.')
         sys.exit(1)
 
     scale = args.resolution
