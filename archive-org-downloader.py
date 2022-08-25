@@ -172,11 +172,11 @@ if __name__ == "__main__":
 	password = args.password
 	scale = args.resolution
 	n_threads = args.threads
-	directory = args.dir
+	d = args.dir
 
-	if directory == None:
-		directory = os.getcwd()
-	elif not os.path.isdir(directory):
+	if d == None:
+		d = os.getcwd()
+	elif not os.path.isdir(d):
 		print(f"Output directory does not exist!")
 		exit()
 
@@ -206,12 +206,12 @@ if __name__ == "__main__":
 		session = loan(session, book_id)
 		title, links = get_book_infos(session, url)
 
-		directory = os.path.join(directory, title)
+		directory = os.path.join(d, title)
 		# Handle the case where multiple books with the same name are downloaded
 		i = 1
-		d = directory
+		_directory = directory
 		while os.path.isdir(directory):
-			directory = f"{d}({i})"
+			directory = f"{_directory}({i})"
 			i += 1
 		os.makedirs(directory)
 
