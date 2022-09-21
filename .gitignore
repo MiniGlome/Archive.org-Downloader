@@ -1,0 +1,3 @@
+docker/.env
+docker/output
+docker/urls.txt
