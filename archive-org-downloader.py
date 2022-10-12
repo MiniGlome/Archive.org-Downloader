@@ -150,7 +150,7 @@ def make_pdf(pdf, title, directory):
 
 if __name__ == "__main__":
 
-	my_parser = argparse.ArgumentParser()
+	my_parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
 	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
 	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
 	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str)
