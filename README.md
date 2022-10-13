@@ -37,23 +37,26 @@ pip install -r requirements.txt
    
 ## Usage
 ```sh
-usage: archive-org-downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-d DIR] [-f FILE] [-r RESOLUTION] [-t THREADS] [-j]
+usage: archive-org-downloader.py [-h] -e EMAIL -p PASSWORD [-d DIR] [-r RESOLUTION] [-t THREADS] [-j] URL [URL ...]
 
-optional arguments:
+positional arguments:
+  URL                   Link to the book (https://archive.org/details/XXXX).
+                        You can use this argument several times to download multiple books
+
+options:
   -h, --help            show this help message and exit
   -e EMAIL, --email EMAIL
                         Your archive.org email
   -p PASSWORD, --password PASSWORD
                         Your archive.org password
-  -u URL, --url URL     Link to the book (https://archive.org/details/XXXX). You can use this argument several times
-                        to download multiple books
   -d DIR, --dir DIR     Output directory
-  -f FILE, --file FILE  File where are stored the URLs of the books to download
   -r RESOLUTION, --resolution RESOLUTION
                         Image resolution (10 to 0, 0 is the highest), [default 3]
   -t THREADS, --threads THREADS
                         Maximum number of threads, [default 50]
-  -j, --jpg             Output to individual JPG's rather then a PDF
+  -j, --jpg             Output to individual JPG's rather than a PDF
+
+You can use @myfile to read arguments from the file myfile, one per line.
 ```
 The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
 The `-r` argument specifies the resolution of the images (0 is the best quality).
@@ -62,13 +65,24 @@ The PDF are downloaded in the current folder
 ### Example
 This command will download the 3 books as pdf in the best possible quality. To only downlaod the individual images you can use `--jpg`.
 ```sh
-python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
+python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 https://archive.org/details/IntermediatePython https://archive.org/details/horrorgamispooky0000bidd_m7r1 https://archive.org/details/elblabladelosge00gaut
 ```
 
-If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `--file`
+If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `@file`
 ```sh
-python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
+python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd @books_to_download.txt
 ```
+
+You can also put your credentials (and any other arguments) in an `@file`:
+```sh
+-e
+myemail@tempmail.com
+-p
+Passw0rd
+```
+
+Note: the previously required `-u` `--url` `-f` `--file` options have been removed.
+Now just put the URLs without `-u`, and use `@myfile` instead of `-f myfile`.
 
 ## Donation
 If you want to support my work, you can send 2 or 3 Bitcoins 🙃 to this address: 
