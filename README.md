@@ -36,7 +36,7 @@ pip install -r requirements.txt
 ```
    
 ## Usage
-```sh
+```
 usage: archive-org-downloader.py [-h] -e EMAIL -p PASSWORD [-d DIR] [-r RESOLUTION] [-t THREADS] [-j] URL [URL ...]
 
 positional arguments:
@@ -74,7 +74,7 @@ python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd @books_to_
 ```
 
 You can also put your credentials (and any other arguments) in an `@file`:
-```sh
+```
 -e
 myemail@tempmail.com
 -p
