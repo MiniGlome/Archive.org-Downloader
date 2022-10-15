@@ -113,6 +113,8 @@ def download_one_image(session, link, i, directory, book_id):
 				raise Exception("Borrow again")
 			elif response.status_code == 200:
 				retry = False
+		except KeyboardInterrupt:
+			raise
 		except:
 			time.sleep(1)	# Wait 1 second before retrying
 
@@ -127,12 +129,16 @@ def download(session, n_threads, directory, links, scale, book_id):
 
 	tasks = []
 	with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
-		for link in links:
-			i = links.index(link)
-			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory ,book_id=book_id))
-		for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
-			pass
-	
+		try:
+			for link in links:
+				i = links.index(link)
+				tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory ,book_id=book_id))
+			for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
+				task.result()
+		except:
+			executor.shutdown(wait=True, cancel_futures=True)
+			raise
+
 	images = [f"{directory}/{i}.jpg" for i in range(len(links))]
 	return images
 
@@ -148,8 +154,7 @@ def make_pdf(pdf, title, directory):
 		f.write(pdf)
 	print(f"[+] PDF saved as \"{file}\"")
 
-if __name__ == "__main__":
-
+def main():
 	my_parser = argparse.ArgumentParser()
 	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
 	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
@@ -227,3 +232,9 @@ if __name__ == "__main__":
 				print ("Error: %s - %s." % (e.filename, e.strerror))
 
 		return_loan(session, book_id)
+
+if __name__ == "__main__":
+	try:
+		main()
+	except KeyboardInterrupt:
+		sys.exit(1)
