@@ -97,28 +97,31 @@ def return_loan(session, book_id):
 		display_error(response, "Something went wrong when trying to return the book")
 
 def download_one_image(session, link, i, directory, book_id):
-	headers = {
-		"Referer": "https://archive.org/",
-		"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
-		"Sec-Fetch-Site": "same-site",
-		"Sec-Fetch-Mode": "no-cors",
-		"Sec-Fetch-Dest": "image",
-	}
-	retry = True
-	while retry:
-		try:
-			response = session.get(link, headers=headers)
-			if response.status_code == 403:
-				session = loan(session, book_id, verbose=False)
-				raise Exception("Borrow again")
-			elif response.status_code == 200:
-				retry = False
-		except:
-			time.sleep(1)	# Wait 1 second before retrying
-
 	image = f"{directory}/{i}.jpg"
-	with open(image,"wb") as f:
-		f.write(response.content)
+	if not os.path.exists(image):
+		headers = {
+			"Referer": "https://archive.org/",
+			"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+			"Sec-Fetch-Site": "same-site",
+			"Sec-Fetch-Mode": "no-cors",
+			"Sec-Fetch-Dest": "image",
+		}
+		retry = True
+		while retry:
+			try:
+				response = session.get(link, headers=headers)
+				if response.status_code == 403:
+					session = loan(session, book_id, verbose=False)
+					raise Exception("Borrow again")
+				elif response.status_code == 200:
+					retry = False
+			except:
+				time.sleep(1)	# Wait 1 second before retrying
+
+		tmpimage = f"{directory}/{i}.tmp.jpg"
+		with open(tmpimage, "wb") as f:
+			f.write(response.content)
+		os.rename(tmpimage, image)
 
 
 def download(session, n_threads, directory, links, scale, book_id):	
@@ -136,17 +139,14 @@ def download(session, n_threads, directory, links, scale, book_id):
 	images = [f"{directory}/{i}.jpg" for i in range(len(links))]
 	return images
 
-def make_pdf(pdf, title, directory):
-	file = title+".pdf"
-	# Handle the case where multiple books with the same name are downloaded
-	i = 1
-	while os.path.isfile(os.path.join(directory, file)):
-		file = f"{title}({i}).pdf"
-		i += 1
-
-	with open(os.path.join(directory, file),"wb") as f:
+def make_pdf(images, dir, book_id, directory):
+	import img2pdf
+	pdf = img2pdf.convert(images)
+	file = book_id + ".pdf"
+	with open(os.path.join(dir, file),"wb") as f:
 		f.write(pdf)
-	print(f"[+] PDF saved as \"{file}\"")
+		print(f"[+] PDF saved as \"{file}\"")
+		shutil.rmtree(directory)
 
 if __name__ == "__main__":
 
@@ -204,26 +204,18 @@ if __name__ == "__main__":
 		print("="*40)
 		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
-		title, links = get_book_infos(session, url)
-
-		directory = os.path.join(d, title)
-		# Handle the case where multiple books with the same name are downloaded
-		i = 1
-		_directory = directory
-		while os.path.isdir(directory):
-			directory = f"{_directory}({i})"
-			i += 1
-		os.makedirs(directory)
-
-		images = download(session, n_threads, directory, links, scale, book_id)
-
-		if not args.jpg: # Create pdf with images and remove the images folder
-			import img2pdf
-			pdf = img2pdf.convert(images)
-			make_pdf(pdf, title, args.dir if args.dir != None else "")
+		try:
+			title, links = get_book_infos(session, url)
+			directory = os.path.join(d, book_id)
 			try:
-				shutil.rmtree(directory)
-			except OSError as e:
-				print ("Error: %s - %s." % (e.filename, e.strerror))
+				os.makedirs(directory)
+			except FileExistsError:
+				pass
 
-		return_loan(session, book_id)
+			images = download(session, n_threads, directory, links, scale, book_id)
+
+			if not args.jpg: # Create pdf with images and remove the images folder
+				make_pdf(images, args.dir if args.dir != None else "", book_id, directory)
+
+		finally:
+			return_loan(session, book_id)
