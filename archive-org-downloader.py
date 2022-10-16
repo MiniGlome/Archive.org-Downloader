@@ -7,6 +7,7 @@ import argparse
 import os
 import sys
 import shutil
+from xdg.BaseDirectory import xdg_config_home
 
 def display_error(response, message):
 	print(message)
@@ -159,10 +160,22 @@ if __name__ == "__main__":
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
 	my_parser.add_argument('URL', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', type=str, nargs='+')
 
+	argv = []
+	conf = os.path.join(xdg_config_home, os.path.basename(sys.argv[0]) + ".conf")
+	if os.path.exists(conf):
+		print(f"configuration file \"{conf}\" found")
+		argv.append('@' + conf)
+	else:
+		print(f"configuration file \"{conf}\" missing")
+
+	for i in range(len(sys.argv)):
+		if i > 0:
+			argv.append(sys.argv[i])
+
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
 		sys.exit(1)
-	args = my_parser.parse_args()
+	args = my_parser.parse_args(argv)
 
 	if args.URL is None or len(args.URL) < 1:
 		my_parser.error("At least one url is required")
