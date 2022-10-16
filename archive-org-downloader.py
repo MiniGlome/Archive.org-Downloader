@@ -191,16 +191,23 @@ if __name__ == "__main__":
 			exit()
 
 	# Check the urls format
+	books = []
 	for url in urls:
-		if not url.startswith("https://archive.org/details/"):
-			print(f"{url} --> Invalid url. URL must starts with \"https://archive.org/details/\"")
+		if url.startswith("https://archive.org/details/"):
+			book_id = list(filter(None, url.split("/")))[3]
+			books.append((book_id, url))
+		elif len(url.split("/")) == 1:
+			books.append((url, "https://archive.org/details/" + url))
+		else:
+			print(f"{url} --> Invalid book. URL must start with \"https://archive.org/details/\", or be a book id without any \"/\"")
 			exit()
 
-	print(f"{len(urls)} Book(s) to download")
+	print(f"{len(books)} Book(s) to download")
 	session = login(email, password)
 
-	for url in urls:
-		book_id = list(filter(None, url.split("/")))[3]
+	for book in books:
+		book_id = book[0]
+		url = book[1]
 		print("="*40)
 		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
