@@ -3,6 +3,7 @@ import random, string
 from concurrent import futures
 from tqdm import tqdm
 import time
+from datetime import datetime
 import argparse
 import os
 import sys
@@ -22,6 +23,7 @@ def get_book_infos(session, url):
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
 	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
 	title = title[:150] # Trim the title to avoid long file names	
+	metadata = data['metadata']
 	links = []
 	for item in data['brOptions']['data']:
 		for page in item:
@@ -29,7 +31,7 @@ def get_book_infos(session, url):
 
 	if len(links) > 1:
 		print(f"[+] Found {len(links)} pages")
-		return title, links
+		return title, links, metadata
 	else:
 		print(f"[-] Error while getting image links")
 		exit()
@@ -204,7 +206,7 @@ if __name__ == "__main__":
 		print("="*40)
 		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
-		title, links = get_book_infos(session, url)
+		title, links, metadata = get_book_infos(session, url)
 
 		directory = os.path.join(d, title)
 		# Handle the case where multiple books with the same name are downloaded
@@ -219,7 +221,30 @@ if __name__ == "__main__":
 
 		if not args.jpg: # Create pdf with images and remove the images folder
 			import img2pdf
-			pdf = img2pdf.convert(images)
+
+			# prepare PDF metadata
+			# sometimes archive metadata is missing
+			pdfmeta = { }
+			# title
+			if 'title' in metadata:
+				pdfmeta['title'] = metadata['title']
+			# author
+			if 'creator' in metadata and 'associated-names' in metadata:
+				pdfmeta['author'] = metadata['creator'] + "; " + metadata['associated-names']
+			elif 'creator' in metadata:
+				pdfmeta['author'] = metadata['creator']
+			elif 'associated-names' in metadata:
+				pdfmeta['author'] = metadata['associated-names']
+			# date
+			if 'date' in metadata:
+				try:
+					pdfmeta['creationdate'] = datetime.strptime(metadata['date'][0:4], '%Y')
+				except:
+					pass
+			# keywords
+			pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
+
+			pdf = img2pdf.convert(images, **pdfmeta)
 			make_pdf(pdf, title, args.dir if args.dir != None else "")
 			try:
 				shutil.rmtree(directory)
