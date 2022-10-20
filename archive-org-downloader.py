@@ -97,18 +97,7 @@ def return_loan(session, book_id):
 		display_error(response, "Something went wrong when trying to return the book")
 
 def image_name(pages, page, directory):
-	if pages < 10:
-		return f"{directory}/{page:0>1}.jpg"
-	elif pages < 100:
-		return f"{directory}/{page:0>2}.jpg"
-	elif pages < 1000:
-		return f"{directory}/{page:0>3}.jpg"
-	elif pages < 10000:
-		return f"{directory}/{page:0>4}.jpg"
-	elif pages < 100000:
-		return f"{directory}/{page:0>5}.jpg"
-	else:
-		return f"{directory}/{page}.jpg"
+	return f"{directory}/{(len(str(pages)) - len(str(page))) * '0'}{page}.jpg"
 
 def download_one_image(session, link, i, directory, book_id, pages):
 	headers = {
