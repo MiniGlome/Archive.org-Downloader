@@ -225,6 +225,15 @@ if __name__ == "__main__":
 			# prepare PDF metadata
 			# sometimes archive metadata is missing
 			pdfmeta = { }
+			# ensure metadata are str
+			for key in ["title", "creator", "associated-names"]:
+				if key in metadata:
+					if isinstance(metadata[key], str):
+						pass
+					elif isinstance(metadata[key], list):
+						metadata[key] = "; ".join(metadata[key])
+					else:
+						raise Exception("unsupported metadata type")
 			# title
 			if 'title' in metadata:
 				pdfmeta['title'] = metadata['title']
