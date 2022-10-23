@@ -98,7 +98,10 @@ def return_loan(session, book_id):
 	else:
 		display_error(response, "Something went wrong when trying to return the book")
 
-def download_one_image(session, link, i, directory, book_id):
+def image_name(pages, page, directory):
+	return f"{directory}/{(len(str(pages)) - len(str(page))) * '0'}{page}.jpg"
+
+def download_one_image(session, link, i, directory, book_id, pages):
 	headers = {
 		"Referer": "https://archive.org/",
 		"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -118,7 +121,7 @@ def download_one_image(session, link, i, directory, book_id):
 		except:
 			time.sleep(1)	# Wait 1 second before retrying
 
-	image = f"{directory}/{i}.jpg"
+	image = image_name(pages, i, directory)
 	with open(image,"wb") as f:
 		f.write(response.content)
 
@@ -126,16 +129,17 @@ def download_one_image(session, link, i, directory, book_id):
 def download(session, n_threads, directory, links, scale, book_id):	
 	print("Downloading pages...")
 	links = [f"{link}&rotate=0&scale={scale}" for link in links]
+	pages = len(links)
 
 	tasks = []
 	with futures.ThreadPoolExecutor(max_workers=n_threads) as executor:
 		for link in links:
 			i = links.index(link)
-			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory ,book_id=book_id))
+			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory, book_id=book_id, pages=pages))
 		for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
 			pass
 	
-	images = [f"{directory}/{i}.jpg" for i in range(len(links))]
+	images = [image_name(pages, i, directory) for i in range(len(links))]
 	return images
 
 def make_pdf(pdf, title, directory):
