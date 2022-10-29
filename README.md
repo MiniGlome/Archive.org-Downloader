@@ -65,6 +65,11 @@ This command will download the 3 books as pdf in the best possible quality. To o
 python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
 ```
 
+You can omit the `https://archive.org/details/` prefix and give book ids (without any `/`):
+```sh
+python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u IntermediatePython -u horrorgamispooky0000bidd_m7r1 -u elblabladelosge00gaut
+```
+
 If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `--file`
 ```sh
 python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
