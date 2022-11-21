@@ -165,6 +165,7 @@ if __name__ == "__main__":
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
+	my_parser.add_argument('-c', '--clean', help="Clean up downloaded files", type=str, default='No')
 
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
@@ -259,9 +260,14 @@ if __name__ == "__main__":
 
 			pdf = img2pdf.convert(images, **pdfmeta)
 			make_pdf(pdf, title, args.dir if args.dir != None else "")
-			try:
-				shutil.rmtree(directory)
-			except OSError as e:
-				print ("Error: %s - %s." % (e.filename, e.strerror))
+			if args.clean == "Yes":
+				print ("Clean up opted")
+				try:
+					print ("Removing downloaded files in %s" % (directory))
+					shutil.rmtree(directory)
+				except OSError as e:
+					print ("Error: %s - %s." % (e.filename, e.strerror))
+			else:
+				print ("Clean up not opted.\nLeaving downloaded files in %s" % (directory))
 
 		return_loan(session, book_id)
