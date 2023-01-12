@@ -8,7 +8,7 @@
   <h3 align="center">Archive.org-Downloader</h3>
 
   <p align="center">
-    Python3 script to download archive.org books in PDF format !
+    Python3 script to download archive.org books in PDF format
     <br />
     </p>
 </p>
@@ -16,7 +16,7 @@
 
 ## About The Project
 
-There are many great books available on https://openlibrary.org/ and https://archive.org/, however, you can only borrow them for 1 hour to 14 days and you don't have the option to download it as a PDF to read it offline or share it with your friends. I created this program to solve this problem and retrieve the original book in pdf format for FREE !
+There are many great books available on https://openlibrary.org/ and https://archive.org/, however, you can only borrow them for 1 hour to 14 days and you don't have the option to download it as a PDF to read it offline or share it with your friends. I created this program to solve this problem and retrieve the original book in pdf format for FREE!
 
 Of course, the download takes a few minutes depending on the number of pages and the quality of the images you have selected. You must also create an account on https://archive.org/ for the script to work.
 
@@ -60,12 +60,12 @@ The `-r` argument specifies the resolution of the images (0 is the best quality)
 The PDF are downloaded in the current folder
 
 ### Example
-This command will download the 3 books as pdf in the best possible quality. To only downlaod the individual images you can use `--jpg`.
+This command will download the 3 books as pdf in the best possible quality. To only download the individual images you can use `--jpg`.
 ```sh
 python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
 ```
 
-If you want to download a lot of books in a raw you can paste the urls of the books in a .txt file (one per line) and use `--file`
+If you want to download a lot of books, you can paste the urls of the books in a .txt file (one per line) and use `--file`
 ```sh
 python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
 ```
