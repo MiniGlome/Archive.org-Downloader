@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 import shutil
+import json
 
 def display_error(response, message):
 	print(message)
@@ -126,7 +127,7 @@ def download_one_image(session, link, i, directory, book_id, pages):
 		f.write(response.content)
 
 
-def download(session, n_threads, directory, links, scale, book_id):	
+def download(session, n_threads, directory, links, scale, book_id):
 	print("Downloading pages...")
 	links = [f"{link}&rotate=0&scale={scale}" for link in links]
 	pages = len(links)
@@ -165,6 +166,7 @@ if __name__ == "__main__":
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
+	my_parser.add_argument('-m', '--meta', help="Output the metadata of the book to a json file", action='store_true')
 
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
@@ -220,6 +222,11 @@ if __name__ == "__main__":
 			directory = f"{_directory}({i})"
 			i += 1
 		os.makedirs(directory)
+		
+		if args.meta:
+			print("Writing metadata.json...")
+			with open(f"{directory}/metadata.json",'w') as f:
+				json.dump(metadata,f)
 
 		images = download(session, n_threads, directory, links, scale, book_id)
 
