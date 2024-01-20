@@ -53,7 +53,8 @@ optional arguments:
                         Image resolution (10 to 0, 0 is the highest), [default 3]
   -t THREADS, --threads THREADS
                         Maximum number of threads, [default 50]
-  -j, --jpg             Output to individual JPG's rather then a PDF
+  -j, --jpg             Output to individual JPG's rather than a PDF
+  -m, --meta            Output the metadata of the book to a json file
 ```
 The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
 The `-r` argument specifies the resolution of the images (0 is the best quality).
