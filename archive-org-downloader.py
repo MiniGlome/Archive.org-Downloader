@@ -18,7 +18,7 @@ def display_error(response, message):
 
 def get_book_infos(session, url):
 	r = session.get(url).text
-	infos_url = "https:" + r.split('bookManifestUrl="')[1].split('"\n')[0]
+	infos_url = "https:" + r.split('"url":"')[1].split('"')[0].replace("\\u0026", "&")
 	response = session.get(infos_url)
 	data = response.json()['data']
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
-	my_parser.add_argument('-m', '--meta', help="Output the metadata of the book to a json file", action='store_true')
+	my_parser.add_argument('-m', '--meta', help="Output the metadata of the book to a json file (-j option required)", action='store_true')
 
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
