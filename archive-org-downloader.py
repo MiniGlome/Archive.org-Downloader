@@ -9,6 +9,7 @@ import os
 import sys
 import shutil
 import json
+from datetime import datetime, timezone
 
 def display_error(response, message):
 	print(message)
@@ -22,7 +23,7 @@ def get_book_infos(session, url):
 	response = session.get(infos_url)
 	data = response.json()['data']
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
-	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
+	title = ''.join(c for c in title if c not in '<>:"/\\|?*') # Filter forbidden chars in directory names (Windows & Linux)
 	title = title[:150] # Trim the title to avoid long file names	
 	metadata = data['metadata']
 	links = []
@@ -41,16 +42,16 @@ def format_data(content_type, fields):
 	data = ""
 	for name, value in fields.items():
 		data += f"--{content_type}\x0d\x0aContent-Disposition: form-data; name=\"{name}\"\x0d\x0a\x0d\x0a{value}\x0d\x0a"
-	data += content_type+"--"
+	data += content_type + "--"
 	return data
 
 def login(email, password):
 	session = requests.Session()
 	session.get("https://archive.org/account/login")
-	content_type = "----WebKitFormBoundary"+"".join(random.sample(string.ascii_letters + string.digits, 16))
+	content_type = "----WebKitFormBoundary" + "".join(random.sample(string.ascii_letters + string.digits, 16))
 
-	headers = {'Content-Type': 'multipart/form-data; boundary='+content_type}
-	data = format_data(content_type, {"username":email, "password":password, "submit_by_js":"true"})
+	headers = {'Content-Type': 'multipart/form-data; boundary=' + content_type}
+	data = format_data(content_type, {"username": email, "password": password, "submit_by_js": "true"})
 
 	response = session.post("https://archive.org/account/login", data=data, headers=headers)
 	if "bad_login" in response.text:
@@ -71,11 +72,11 @@ def loan(session, book_id, verbose=True):
 	data['action'] = "browse_book"
 	response = session.post("https://archive.org/services/loans/loan/", data=data)
 
-	if response.status_code == 400 :
+	if response.status_code == 400:
 		if response.json()["error"] == "This book is not available to borrow at this time. Please try again later.":
 			print("This book doesn't need to be borrowed")
 			return session
-		else :
+		else:
 			display_error(response, "Something went wrong when trying to borrow the book.")
 
 	data['action'] = "create_token"
@@ -123,9 +124,8 @@ def download_one_image(session, link, i, directory, book_id, pages):
 			time.sleep(1)	# Wait 1 second before retrying
 
 	image = image_name(pages, i, directory)
-	with open(image,"wb") as f:
+	with open(image, "wb") as f:
 		f.write(response.content)
-
 
 def download(session, n_threads, directory, links, scale, book_id):
 	print("Downloading pages...")
@@ -144,14 +144,14 @@ def download(session, n_threads, directory, links, scale, book_id):
 	return images
 
 def make_pdf(pdf, title, directory):
-	file = title+".pdf"
+	file = title + ".pdf"
 	# Handle the case where multiple books with the same name are downloaded
 	i = 1
 	while os.path.isfile(os.path.join(directory, file)):
 		file = f"{title}({i}).pdf"
 		i += 1
 
-	with open(os.path.join(directory, file),"wb") as f:
+	with open(os.path.join(directory, file), "wb") as f:
 		f.write(pdf)
 	print(f"[+] PDF saved as \"{file}\"")
 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
 	for url in urls:
 		book_id = list(filter(None, url.split("/")))[3]
-		print("="*40)
+		print("=" * 40)
 		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
 		title, links, metadata = get_book_infos(session, url)
@@ -225,17 +225,17 @@ if __name__ == "__main__":
 		
 		if args.meta:
 			print("Writing metadata.json...")
-			with open(f"{directory}/metadata.json",'w') as f:
-				json.dump(metadata,f)
+			with open(f"{directory}/metadata.json", 'w') as f:
+				json.dump(metadata, f)
 
 		images = download(session, n_threads, directory, links, scale, book_id)
 
-		if not args.jpg: # Create pdf with images and remove the images folder
+		if not args.jpg:  # Create pdf with images and remove the images folder
 			import img2pdf
 
 			# prepare PDF metadata
 			# sometimes archive metadata is missing
-			pdfmeta = { }
+			pdfmeta = {}
 			# ensure metadata are str
 			for key in ["title", "creator", "associated-names"]:
 				if key in metadata:
@@ -258,17 +258,31 @@ if __name__ == "__main__":
 			# date
 			if 'date' in metadata:
 				try:
-					pdfmeta['creationdate'] = datetime.strptime(metadata['date'][0:4], '%Y')
-				except:
-					pass
+					# Ensure date is timezone-aware in UTC
+					creation_date = datetime.strptime(metadata['date'][0:4], '%Y').replace(tzinfo=timezone.utc)
+					pdfmeta['creationdate'] = creation_date
+				except Exception as e:
+					print(f"Error parsing date: {e}")
 			# keywords
 			pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
+
+			# Validate the pdfmeta dictionary before passing it to img2pdf.convert
+			def validate_pdfmeta(pdfmeta):
+				for key, value in pdfmeta.items():
+					if isinstance(value, datetime):
+						try:
+							value.astimezone(timezone.utc)
+						except Exception as e:
+							print(f"Error with datetime value for {key}: {e}")
+							pdfmeta[key] = datetime.now(timezone.utc)
+
+			validate_pdfmeta(pdfmeta)
 
 			pdf = img2pdf.convert(images, **pdfmeta)
 			make_pdf(pdf, title, args.dir if args.dir != None else "")
 			try:
 				shutil.rmtree(directory)
 			except OSError as e:
-				print ("Error: %s - %s." % (e.filename, e.strerror))
+				print("Error: %s - %s." % (e.filename, e.strerror))
 
-		return_loan(session, book_id)
+	return_loan(session, book_id)
