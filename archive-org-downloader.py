@@ -24,7 +24,7 @@ def get_book_infos(session, url):
 	data = response.json()['data']
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
 	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
-	title = title[:150] # Trim the title to avoid long file names
+	title = title[:150] # Trim the title to avoid long file names	
 	metadata = data['metadata']
 	links = []
 	for item in data['brOptions']['data']:
