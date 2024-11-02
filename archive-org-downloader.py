@@ -9,6 +9,7 @@ import os
 import sys
 import shutil
 import json
+import urllib
 
 def display_error(response, message):
 	print(message)
@@ -23,7 +24,7 @@ def get_book_infos(session, url):
 	data = response.json()['data']
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
 	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
-	title = title[:150] # Trim the title to avoid long file names	
+	title = title[:150] # Trim the title to avoid long file names
 	metadata = data['metadata']
 	links = []
 	for item in data['brOptions']['data']:
@@ -47,16 +48,12 @@ def format_data(content_type, fields):
 def login(email, password):
 	session = requests.Session()
 	session.get("https://archive.org/account/login")
-	content_type = "----WebKitFormBoundary"+"".join(random.sample(string.ascii_letters + string.digits, 16))
 
-	headers = {'Content-Type': 'multipart/form-data; boundary='+content_type}
-	data = format_data(content_type, {"username":email, "password":password, "submit_by_js":"true"})
-
-	response = session.post("https://archive.org/account/login", data=data, headers=headers)
-	if "bad_login" in response.text:
-		print("[-] Invalid credentials!")
-		exit()
-	elif "Successful login" in response.text:
+	headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+	data = {"username":email, "password":password}
+	encoded_data = urllib.parse.urlencode(data)
+	response = session.post("https://archive.org/account/login", data=encoded_data, headers=headers)
+	if response.status_code == requests.codes.ok:
 		print("[+] Successful login")
 		return session
 	else:
@@ -139,7 +136,7 @@ def download(session, n_threads, directory, links, scale, book_id):
 			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory, book_id=book_id, pages=pages))
 		for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
 			pass
-	
+
 	images = [image_name(pages, i, directory) for i in range(len(links))]
 	return images
 
@@ -222,7 +219,7 @@ if __name__ == "__main__":
 			directory = f"{_directory}({i})"
 			i += 1
 		os.makedirs(directory)
-		
+
 		if args.meta:
 			print("Writing metadata.json...")
 			with open(f"{directory}/metadata.json",'w') as f:
