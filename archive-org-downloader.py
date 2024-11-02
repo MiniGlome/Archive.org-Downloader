@@ -136,7 +136,7 @@ def download(session, n_threads, directory, links, scale, book_id):
 			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory, book_id=book_id, pages=pages))
 		for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
 			pass
-
+	
 	images = [image_name(pages, i, directory) for i in range(len(links))]
 	return images
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
 			directory = f"{_directory}({i})"
 			i += 1
 		os.makedirs(directory)
-
+		
 		if args.meta:
 			print("Writing metadata.json...")
 			with open(f"{directory}/metadata.json",'w') as f:
