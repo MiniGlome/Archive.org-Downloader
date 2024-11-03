@@ -37,22 +37,13 @@ def get_book_infos(session, url):
 		print(f"[-] Error while getting image links")
 		exit()
 
-def format_data(content_type, fields):
-	data = ""
-	for name, value in fields.items():
-		data += f"--{content_type}\x0d\x0aContent-Disposition: form-data; name=\"{name}\"\x0d\x0a\x0d\x0a{value}\x0d\x0a"
-	data += content_type+"--"
-	return data
-
 def login(email, password):
 	session = requests.Session()
 	session.get("https://archive.org/account/login")
-	content_type = "----WebKitFormBoundary"+"".join(random.sample(string.ascii_letters + string.digits, 16))
 
-	headers = {'Content-Type': 'multipart/form-data; boundary='+content_type}
-	data = format_data(content_type, {"username":email, "password":password, "submit_by_js":"true"})
+	data = {"username":email, "password":password}
 
-	response = session.post("https://archive.org/account/login", data=data, headers=headers)
+	response = session.post("https://archive.org/account/login", data=data)
 	if "bad_login" in response.text:
 		print("[-] Invalid credentials!")
 		exit()
