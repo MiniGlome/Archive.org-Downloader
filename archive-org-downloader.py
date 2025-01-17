@@ -157,7 +157,8 @@ if __name__ == "__main__":
 	my_parser.add_argument('-r', '--resolution', help='Image resolution (10 to 0, 0 is the highest), [default 3]', type=int, default=3)
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
-	my_parser.add_argument('-m', '--meta', help="Output the metadata of the book to a json file (-j option required)", action='store_true')
+	my_parser.add_argument('-m', '--meta', help="Output the metadata of the book to a json file", action='store_true')
+	my_parser.add_argument('-M', '--meta-only', help="Only download metadata without images or PDF", action='store_true')
 
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
@@ -202,64 +203,83 @@ if __name__ == "__main__":
 		book_id = list(filter(None, url.split("/")))[3]
 		print("="*40)
 		print(f"Current book: https://archive.org/details/{book_id}")
-		session = loan(session, book_id)
 		title, links, metadata = get_book_infos(session, url)
 
-		directory = os.path.join(d, title)
-		# Handle the case where multiple books with the same name are downloaded
-		i = 1
-		_directory = directory
-		while os.path.isdir(directory):
-			directory = f"{_directory}({i})"
-			i += 1
-		os.makedirs(directory)
-		
-		if args.meta:
+		if args.meta or args.meta_only:
 			print("Writing metadata.json...")
-			with open(f"{directory}/metadata.json",'w') as f:
+			# Write metadata to output directory
+			metadata_path = os.path.join(d, f"{title}_metadata.json")
+			i = 1
+			while os.path.exists(metadata_path):
+				metadata_path = os.path.join(d, f"{title}_metadata({i}).json")
+				i += 1
+			with open(metadata_path,'w') as f:
 				json.dump(metadata,f)
 
-		images = download(session, n_threads, directory, links, scale, book_id)
+		if not args.meta_only:
+			# Create temporary directory for images
+			directory = os.path.join(d, title)
+			# Handle the case where multiple books with the same name are downloaded
+			i = 1
+			_directory = directory
+			while os.path.isdir(directory):
+				directory = f"{_directory}({i})"
+				i += 1
+			os.makedirs(directory)
+			# Only loan the book if we need to download images
+			session = loan(session, book_id)
+			images = download(session, n_threads, directory, links, scale, book_id)
 
-		if not args.jpg: # Create pdf with images and remove the images folder
-			import img2pdf
+			if not args.jpg: # Create pdf with images and remove the images folder
+				import img2pdf
 
-			# prepare PDF metadata
-			# sometimes archive metadata is missing
-			pdfmeta = { }
-			# ensure metadata are str
-			for key in ["title", "creator", "associated-names"]:
-				if key in metadata:
-					if isinstance(metadata[key], str):
+				# prepare PDF metadata
+				# sometimes archive metadata is missing
+				pdfmeta = { }
+				# ensure metadata are str
+				for key in ["title", "creator", "associated-names"]:
+					if key in metadata:
+						if isinstance(metadata[key], str):
+							pass
+						elif isinstance(metadata[key], list):
+							metadata[key] = "; ".join(metadata[key])
+						else:
+							raise Exception("unsupported metadata type")
+				# title
+				if 'title' in metadata:
+					pdfmeta['title'] = metadata['title']
+				# author
+				if 'creator' in metadata and 'associated-names' in metadata:
+					pdfmeta['author'] = metadata['creator'] + "; " + metadata['associated-names']
+				elif 'creator' in metadata:
+					pdfmeta['author'] = metadata['creator']
+				elif 'associated-names' in metadata:
+					pdfmeta['author'] = metadata['associated-names']
+				# date
+				if 'date' in metadata:
+					try:
+						pdfmeta['creationdate'] = datetime.strptime(metadata['date'][0:4], '%Y')
+					except:
 						pass
-					elif isinstance(metadata[key], list):
-						metadata[key] = "; ".join(metadata[key])
-					else:
-						raise Exception("unsupported metadata type")
-			# title
-			if 'title' in metadata:
-				pdfmeta['title'] = metadata['title']
-			# author
-			if 'creator' in metadata and 'associated-names' in metadata:
-				pdfmeta['author'] = metadata['creator'] + "; " + metadata['associated-names']
-			elif 'creator' in metadata:
-				pdfmeta['author'] = metadata['creator']
-			elif 'associated-names' in metadata:
-				pdfmeta['author'] = metadata['associated-names']
-			# date
-			if 'date' in metadata:
+				# keywords
+				pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
+
+				pdf = img2pdf.convert(images, **pdfmeta)
+				make_pdf(pdf, title, args.dir if args.dir != None else "")
+			# Clean up temporary directory
+			for filename in os.listdir(directory):
+				file_path = os.path.join(directory, filename)
 				try:
-					pdfmeta['creationdate'] = datetime.strptime(metadata['date'][0:4], '%Y')
-				except:
-					pass
-			# keywords
-			pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
-
-			pdf = img2pdf.convert(images, **pdfmeta)
-			make_pdf(pdf, title, args.dir if args.dir != None else "")
+					if os.path.isfile(file_path) or os.path.islink(file_path):
+						os.unlink(file_path)
+					elif os.path.isdir(file_path):
+						shutil.rmtree(file_path)
+				except Exception as e:
+					print(f"Failed to delete {file_path}. Reason: {e}")
 			try:
-				shutil.rmtree(directory)
-			except OSError as e:
-				print ("Error: %s - %s." % (e.filename, e.strerror))
-
-		return_loan(session, book_id)
+				os.rmdir(directory)  # Remove the empty directory
+			except Exception as e:
+				print(f"Failed to remove directory {directory}. Reason: {e}")
+			
+			# Return the loan since we borrowed it for downloading
+			return_loan(session, book_id)
