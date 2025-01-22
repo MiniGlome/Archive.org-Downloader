@@ -128,7 +128,7 @@ def download(session, n_threads, directory, links, scale, book_id):
 		for link in links:
 			i = links.index(link)
 			tasks.append(executor.submit(download_one_image, session=session, link=link, i=i, directory=directory, book_id=book_id, pages=pages))
-		for task in tqdm(futures.as_completed(tasks), total=len(tasks)):
+		for task in tqdm(futures.as_completed(tasks), total=len(tasks), leave=False):
 			pass
 	
 	images = [image_name(pages, i, directory) for i in range(len(links))]
