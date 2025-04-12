@@ -14,6 +14,8 @@ import base64
 import hashlib
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
+import configparser
+import tempfile
 
 def display_error(response, message):
 	print(message)
@@ -209,8 +211,8 @@ def make_pdf(pdf, title, directory):
 if __name__ == "__main__":
 
 	my_parser = argparse.ArgumentParser()
-	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
-	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
+	my_parser.add_argument('-e', '--email', help='Your archive.org email (or use ~/.archive-org.ini)', type=str)
+	my_parser.add_argument('-p', '--password', help='Your archive.org password (or use ~/.archive-org.ini)', type=str)
 	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str)
 	my_parser.add_argument('-d', '--dir', help='Output directory', type=str)
 	my_parser.add_argument('-f', '--file', help='File where are stored the URLs of the books to download', type=str)
@@ -223,21 +225,33 @@ if __name__ == "__main__":
 		my_parser.print_help(sys.stderr)
 		sys.exit(1)
 	args = my_parser.parse_args()
+	config_path = os.path.expanduser("~/.archive-org.ini")
+	config = configparser.ConfigParser()
+	if os.path.exists(config_path):
+		config.read(config_path)
 
 	if args.url is None and args.file is None:
 		my_parser.error("At least one of --url and --file required")
 
-	email = args.email
-	password = args.password
-	scale = args.resolution
-	n_threads = args.threads
-	d = args.dir
-
-	if d == None:
+	email = args.email or config.get("credentials", "email", fallback=None)
+	password = args.password or config.get("credentials", "password", fallback=None)
+	scale = args.resolution if args.resolution is not None else config.getint("defaults", "resolution", fallback=3)
+	# Try CLI, then config, then current directory
+	d = args.dir or config.get("defaults", "dir", fallback=None)
+	if d is None:
 		d = os.getcwd()
 	elif not os.path.isdir(d):
-		print(f"Output directory does not exist!")
-		exit()
+		print(f"[-] Output directory does not exist or is not mounted: {d}")
+		sys.exit(1)
+	n_threads = args.threads if args.threads is not None else config.getint("defaults", "threads", fallback=50)
+
+	if not email or not password:
+		print("Email and password are required, either via CLI or ~/.archive-org.ini")
+		sys.exit(1)
+
+	if not os.path.isdir(d):
+		print(f"[-] Output directory does not exist or is not mounted: {d}")
+		sys.exit(1)
 
 	if args.url is not None:
 		urls = args.url
@@ -265,7 +279,7 @@ if __name__ == "__main__":
 		session = loan(session, book_id)
 		title, links, metadata = get_book_infos(session, url)
 
-		directory = os.path.join(d, title)
+		directory = tempfile.mkdtemp(prefix=title + "_")
 		# Handle the case where multiple books with the same name are downloaded
 		i = 1
 		_directory = directory
@@ -316,7 +330,7 @@ if __name__ == "__main__":
 			pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
 
 			pdf = img2pdf.convert(images, **pdfmeta)
-			make_pdf(pdf, title, args.dir if args.dir != None else "")
+			make_pdf(pdf, title, d)
 			try:
 				shutil.rmtree(directory)
 			except OSError as e:
