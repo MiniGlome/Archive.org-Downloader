@@ -10,6 +10,11 @@ import sys
 import shutil
 import json
 from urllib.parse import unquote
+import re
+import base64
+import hashlib
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
 
 def display_error(response, message):
 	print(message)
@@ -38,22 +43,13 @@ def get_book_infos(session, url):
 		print(f"[-] Error while getting image links")
 		exit()
 
-def format_data(content_type, fields):
-	data = ""
-	for name, value in fields.items():
-		data += f"--{content_type}\x0d\x0aContent-Disposition: form-data; name=\"{name}\"\x0d\x0a\x0d\x0a{value}\x0d\x0a"
-	data += content_type+"--"
-	return data
-
 def login(email, password):
 	session = requests.Session()
 	session.get("https://archive.org/account/login")
-	content_type = "----WebKitFormBoundary"+"".join(random.sample(string.ascii_letters + string.digits, 16))
 
-	headers = {'Content-Type': 'multipart/form-data; boundary='+content_type}
-	data = format_data(content_type, {"username":email, "password":password, "submit_by_js":"true"})
+	data = {"username":email, "password":password}
 
-	response = session.post("https://archive.org/account/login", data=data, headers=headers)
+	response = session.post("https://archive.org/account/login", data=data)
 	if "bad_login" in response.text:
 		print("[-] Invalid credentials!")
 		exit()
@@ -73,11 +69,14 @@ def loan(session, book_id, verbose=True):
 	response = session.post("https://archive.org/services/loans/loan/", data=data)
 
 	if response.status_code == 400 :
-		if response.json()["error"] == "This book is not available to borrow at this time. Please try again later.":
-			print("This book doesn't need to be borrowed")
-			return session
-		else :
-			display_error(response, "Something went wrong when trying to borrow the book.")
+		try:
+			if response.json()["error"] == "This book is not available to borrow at this time. Please try again later.":
+				print("This book doesn't need to be borrowed")
+				return session
+			else :
+				display_error(response, "Something went wrong when trying to borrow the book.")
+		except: # The response is not in JSON format
+			display_error(response, "The book cannot be borrowed")
 
 	data['action'] = "create_token"
 	response = session.post("https://archive.org/services/loans/loan/", data=data)
@@ -103,6 +102,46 @@ def return_loan(session, book_id):
 def image_name(pages, page, directory):
 	return f"{directory}/{(len(str(pages)) - len(str(page))) * '0'}{page}.jpg"
 
+def deobfuscate_image(image_data, link, obf_header):
+	"""
+	@Author: https://github.com/justimm
+	Decrypts the first 1024 bytes of image_data using AES-CTR.
+	The obfuscation_header is expected in the form "1|<base64encoded_counter>"
+	where the base64-decoded counter is 16 bytes.
+	We derive the AES key by taking the SHA-1 digest of the image URL (with protocol/host removed)
+	and using the first 16 bytes.
+	For AES-CTR, we use a 16-byte counter block. The first 8 bytes are used as a fixed prefix,
+	and the remaining 8 bytes (interpreted as a big-endian integer) are used as the initial counter value.
+	"""
+	try:
+		version, counter_b64 = obf_header.split('|')
+	except Exception as e:
+		raise ValueError("Invalid X-Obfuscate header format") from e
+
+	if version != '1':
+		raise ValueError("Unsupported obfuscation version: " + version)
+
+	# Derive AES key: replace protocol/host in link with '/'
+	aesKey = re.sub(r"^https?:\/\/.*?\/", "/", link)
+	sha1_digest = hashlib.sha1(aesKey.encode('utf-8')).digest()
+	key = sha1_digest[:16]
+
+	# Decode the counter (should be 16 bytes)
+	counter_bytes = base64.b64decode(counter_b64)
+	if len(counter_bytes) != 16:
+		raise ValueError(f"Expected counter to be 16 bytes, got {len(counter_bytes)}")
+
+	prefix = counter_bytes[:8]
+	initial_value = int.from_bytes(counter_bytes[8:], byteorder='big')
+
+	# Create AES-CTR cipher with a 64-bit counter length.
+	ctr = Counter.new(64, prefix=prefix, initial_value=initial_value, little_endian=False)
+	cipher = AES.new(key, AES.MODE_CTR, counter=ctr)
+
+	decrypted_part = cipher.decrypt(image_data[:1024])
+	new_data = decrypted_part + image_data[1024:]
+	return new_data	
+
 def download_one_image(session, link, i, directory, book_id, pages):
 	headers = {
 		"Referer": "https://archive.org/",
@@ -112,6 +151,7 @@ def download_one_image(session, link, i, directory, book_id, pages):
 		"Sec-Fetch-Dest": "image",
 	}
 	retry = True
+	response = None
 	while retry:
 		try:
 			response = session.get(link, headers=headers)
@@ -124,9 +164,20 @@ def download_one_image(session, link, i, directory, book_id, pages):
 			time.sleep(1)	# Wait 1 second before retrying
 
 	image = image_name(pages, i, directory)
-	with open(image,"wb") as f:
-		f.write(response.content)
 
+	obf_header = response.headers.get("X-Obfuscate")
+	image_content = None
+	if obf_header:
+		try:
+			image_content = deobfuscate_image(response.content, link, obf_header)
+		except Exception as e:
+			print(f"[ERROR] Deobfuscation failed: {e}")
+			return
+	else:
+		image_content = response.content
+	
+	with open(image, "wb") as f:
+		f.write(image_content)
 
 def download(session, n_threads, directory, links, scale, book_id):
 	print("Downloading pages...")
