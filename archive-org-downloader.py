@@ -9,7 +9,6 @@ import os
 import sys
 import shutil
 import json
-from urllib.parse import unquote
 import re
 import base64
 import hashlib
@@ -45,19 +44,30 @@ def get_book_infos(session, url):
 
 def login(email, password):
 	session = requests.Session()
-	session.get("https://archive.org/account/login")
+	response = session.get("https://archive.org/services/account/login/")
+	login_data = response.json()
+	if not login_data['success']:
+		display_error(response, "[-] Error while getting login token:")
 
-	data = {"username":email, "password":password}
+	login_token = login_data["value"]["token"]
 
-	response = session.post("https://archive.org/account/login", data=data)
-	if "bad_login" in response.text:
-		print("[-] Invalid credentials!")
-		exit()
-	elif "Successful login" in response.text:
+	headers = {"Content-Type": "application/x-www-form-urlencoded"}
+	data = {"username":email, "password":password, "t": login_token}
+	
+	response = session.post("https://archive.org/services/account/login/", headers=headers, data=json.dumps(data))
+	try:
+		response_json = response.json()
+	except:
+		display_error(response, "[-] Error while login:")
+	
+	if response_json["success"] == False:
+		if response_json["value"] == "bad_login":
+			print("[-] Invalid credentials!")
+			exit()
+		display_error(response, "[-] Error while login:")
+	else:
 		print("[+] Successful login")
 		return session
-	else:
-		display_error(response, "[-] Error while login:")
 
 def loan(session, book_id, verbose=True):
 	data = {
@@ -266,10 +276,6 @@ if __name__ == "__main__":
 		session = loan(session, book_id)
 		title, links, metadata = get_book_infos(session, url)
 
-		print(unquote(url))
-
-		#print("metadata is" + metadata["title-alt-script"])
-
 		directory = os.path.join(d, title)
 		# Handle the case where multiple books with the same name are downloaded
 		i = 1
@@ -303,7 +309,7 @@ if __name__ == "__main__":
 						raise Exception("unsupported metadata type")
 			# title
 			if 'title' in metadata:
-				pdfmeta['title'] = metadata['title']		
+				pdfmeta['title'] = metadata['title']
 			# author
 			if 'creator' in metadata and 'associated-names' in metadata:
 				pdfmeta['author'] = metadata['creator'] + "; " + metadata['associated-names']
@@ -319,12 +325,8 @@ if __name__ == "__main__":
 					pass
 			# keywords
 			pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
-			
+
 			pdf = img2pdf.convert(images, **pdfmeta)
-			if 'title-alt-script' in metadata:
-				title = metadata['title-alt-script']
-				title = title.replace("\\"," ").replace("/"," ").replace(":"," ").replace("*"," ").replace("?"," ")
-				title = title.replace("\""," ").replace("<"," ").replace(">"," ").replace("|"," ")
 			make_pdf(pdf, title, args.dir if args.dir != None else "")
 			try:
 				shutil.rmtree(directory)
