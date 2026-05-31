@@ -12,8 +12,8 @@ import json
 import re
 import base64
 import hashlib
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
+from Cryptodome.Cipher import AES
+from Cryptodome.Util import Counter
 
 def display_error(response, message):
 	print(message)
