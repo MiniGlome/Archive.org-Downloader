@@ -327,7 +327,11 @@ if __name__ == "__main__":
 			pdfmeta['keywords'] = [f"https://archive.org/details/{book_id}"]
 
 			pdf = img2pdf.convert(images, **pdfmeta)
-			make_pdf(pdf, title, args.dir if args.dir != None else "")
+			if 'title-alt-script' in metadata:
+				title = metadata['title-alt-script']
+				title = title.replace("\\"," ").replace("/"," ").replace(":"," ").replace("*"," ").replace("?"," ")
+				title = title.replace("\""," ").replace("<"," ").replace(">"," ").replace("|"," ")
+			make_pdf(pdf, title, args.dir if args.dir != None else "")			
 			try:
 				shutil.rmtree(directory)
 			except OSError as e:
