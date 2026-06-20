@@ -13,12 +13,38 @@
     </p>
 </p>
 
+---
+
+<p align="center">
+  <strong>🌐 Prefer a no-install option? Try the web version: <a href="https://archive-dl.com/">archive-dl.com</a></strong>
+  <br />
+  Download archive.org books as PDF right from your browser. No Python, no setup, works on any device.
+  <br />
+  <a href="https://archive-dl.com/"><img src="https://img.shields.io/badge/Web%20App-archive--dl.com-blue?style=for-the-badge" alt="archive-dl.com"></a>
+</p>
+
+---
+
 
 ## About The Project
 
 There are many great books available on https://openlibrary.org/ and https://archive.org/, however, you can only borrow them for 1 hour to 14 days and you don't have the option to download it as a PDF to read it offline or share it with your friends. I created this program to solve this problem and retrieve the original book in pdf format for FREE!
 
 Of course, the download takes a few minutes depending on the number of pages and the quality of the images you have selected. You must also create an account on https://archive.org/ for the script to work.
+
+
+## 🌐 Web Version: [archive-dl.com](https://archive-dl.com/)
+
+Don't want to install anything? **[archive-dl.com](https://archive-dl.com/)** is the online version of this project. Just paste a book link and download the PDF straight from your browser:
+
+- ✅ **No installation:** nothing to download or configure, runs entirely in your browser
+- ✅ **Works everywhere:** Windows, macOS, Linux, phones and tablets
+- ✅ **Same quality:** full-resolution PDF downloads
+- ✅ **Beginner friendly:** no command line, no Python required
+
+👉 **Try it now at [archive-dl.com](https://archive-dl.com/)**
+
+> Prefer the command line or want to automate bulk downloads? The Python script below is still fully maintained and free to use.
 
 
 ## Getting Started
