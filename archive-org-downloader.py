@@ -3,7 +3,7 @@ import random, string
 from concurrent import futures
 from tqdm import tqdm
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 import argparse
 import os
 import sys
@@ -320,7 +320,7 @@ if __name__ == "__main__":
 			# date
 			if 'date' in metadata:
 				try:
-					pdfmeta['creationdate'] = datetime.strptime(metadata['date'][0:4], '%Y')
+					pdfmeta['creationdate'] = datetime.strptime(metadata['date'][0:4], '%Y').replace(tzinfo=timezone.utc)
 				except:
 					pass
 			# keywords
