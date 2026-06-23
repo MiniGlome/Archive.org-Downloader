@@ -15,6 +15,8 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 
+import localsecrets
+
 def display_error(response, message):
 	print(message)
 	print(response)
@@ -219,9 +221,13 @@ def make_pdf(pdf, title, directory):
 
 if __name__ == "__main__":
 
+	email_arg_required = True if localsecrets.user_email is ("" or None) else False
+	pw_arg_required = True if localsecrets.user_password is ("" or None) else False
+	
 	my_parser = argparse.ArgumentParser()
-	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
-	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
+	
+	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=email_arg_required)
+	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=pw_arg_required)
 	my_parser.add_argument('-u', '--url', help='Link to the book (https://archive.org/details/XXXX). You can use this argument several times to download multiple books', action='append', type=str)
 	my_parser.add_argument('-d', '--dir', help='Output directory', type=str)
 	my_parser.add_argument('-f', '--file', help='File where are stored the URLs of the books to download', type=str)
@@ -238,8 +244,8 @@ if __name__ == "__main__":
 	if args.url is None and args.file is None:
 		my_parser.error("At least one of --url and --file required")
 
-	email = args.email
-	password = args.password
+	email = args.email if email_arg_required else localsecrets.user_email
+	password = args.password if pw_arg_required else localsecrets.user_password
 	scale = args.resolution
 	n_threads = args.threads
 	d = args.dir
@@ -334,3 +340,4 @@ if __name__ == "__main__":
 				print ("Error: %s - %s." % (e.filename, e.strerror))
 
 		return_loan(session, book_id)
+
