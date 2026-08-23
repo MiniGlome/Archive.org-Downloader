@@ -1,4 +1,4 @@
-requests
-tqdm
-img2pdf
-pycryptodome
+requests>=2.25
+tqdm>=4.50
+img2pdf>=0.4.4
+pycryptodome>=3.10
