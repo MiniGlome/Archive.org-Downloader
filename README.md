@@ -56,14 +56,19 @@ Make sure you've already git installed. Then you can run the following commands 
    git clone https://github.com/MiniGlome/Archive.org-Downloader.git
    cd Archive.org-Downloader
    ```
-The script requires the modules `requests`, `tqdm` and `img2pdf`, you can install them all at once with this command:
+The script requires the modules `requests`, `tqdm`, `img2pdf` and `pycryptodome`, you can install them all at once with this command:
 ```sh
 pip install -r requirements.txt
+```
+
+Alternatively, install it as a package to get an `archive-org-downloader` command on your `PATH`:
+```sh
+pip install .
 ```
    
 ## Usage
 ```sh
-usage: archive-org-downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-d DIR] [-f FILE] [-r RESOLUTION] [-t THREADS] [-j]
+usage: archive_org_downloader.py [-h] -e EMAIL -p PASSWORD [-u URL] [-d DIR] [-f FILE] [-r RESOLUTION] [-t THREADS] [-j] [-m]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -80,7 +85,7 @@ optional arguments:
   -t THREADS, --threads THREADS
                         Maximum number of threads, [default 50]
   -j, --jpg             Output to individual JPG's rather than a PDF
-  -m, --meta            Output the metadata of the book to a json file
+  -m, --meta            Output the metadata of the book to a json file (-j option required)
 ```
 The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
 The `-r` argument specifies the resolution of the images (0 is the best quality).
@@ -89,12 +94,16 @@ The PDF are downloaded in the current folder
 ### Example
 This command will download the 3 books as pdf in the best possible quality. To only download the individual images you can use `--jpg`.
 ```sh
-python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
+python3 archive_org_downloader.py -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
+```
+Or, if you installed it with `pip install .`:
+```sh
+archive-org-downloader -e myemail@tempmail.com -p Passw0rd -r 0 -u https://archive.org/details/IntermediatePython -u https://archive.org/details/horrorgamispooky0000bidd_m7r1 -u https://archive.org/details/elblabladelosge00gaut 
 ```
 
 If you want to download a lot of books, you can paste the urls of the books in a .txt file (one per line) and use `--file`
 ```sh
-python3 archive-org-downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
+python3 archive_org_downloader.py -e myemail@tempmail.com -p Passw0rd --file books_to_download.txt
 ```
 
 ## Donation

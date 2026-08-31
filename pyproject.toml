@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "archive-org-downloader"
+version = "1.0.0"
+description = "Download archive.org books in PDF format"
+readme = "README.md"
+license = "LicenseRef-PolyForm-Noncommercial-1.0.0"
+license-files = ["LICENSE.md"]
+requires-python = ">=3.9"
+dependencies = [
+    "requests",
+    "tqdm",
+    "img2pdf",
+    "pycryptodome",
+]
+
+[project.scripts]
+archive-org-downloader = "archive_org_downloader:main"
+
+[tool.setuptools]
+py-modules = ["archive_org_downloader"]
