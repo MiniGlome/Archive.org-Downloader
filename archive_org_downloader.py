@@ -217,8 +217,7 @@ def make_pdf(pdf, title, directory):
 		f.write(pdf)
 	print(f"[+] PDF saved as \"{file}\"")
 
-if __name__ == "__main__":
-
+def main():
 	my_parser = argparse.ArgumentParser()
 	my_parser.add_argument('-e', '--email', help='Your archive.org email', type=str, required=True)
 	my_parser.add_argument('-p', '--password', help='Your archive.org password', type=str, required=True)
@@ -334,3 +333,6 @@ if __name__ == "__main__":
 				print ("Error: %s - %s." % (e.filename, e.strerror))
 
 		return_loan(session, book_id)
+
+if __name__ == "__main__":
+	main()
