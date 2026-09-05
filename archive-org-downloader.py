@@ -26,6 +26,10 @@ def get_book_infos(session, url):
 	infos_url = "https:" + r.split('"url":"')[1].split('"')[0].replace("\\u0026", "&")
 	response = session.get(infos_url)
 	data = response.json()['data']
+	is_print_disabled_only = data.get('lendingInfo', {}).get('isPrintDisabledOnly', False)
+	if is_print_disabled_only:	
+		print("[-] You cannot download this book. It is only available to patrons with print disabilities.")
+		return None, None, None
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
 	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
 	title = title[:150] # Trim the title to avoid long file names	
@@ -40,7 +44,7 @@ def get_book_infos(session, url):
 		return title, links, metadata
 	else:
 		print(f"[-] Error while getting image links")
-		exit()
+		return None, None, None
 
 def login(email, password):
 	session = requests.Session()
@@ -71,11 +75,9 @@ def login(email, password):
 
 def loan(session, book_id, verbose=True):
 	data = {
-		"action": "grant_access",
+		"action": "browse_book",
 		"identifier": book_id
 	}
-	response = session.post("https://archive.org/services/loans/loan/searchInside.php", data=data)
-	data['action'] = "browse_book"
 	response = session.post("https://archive.org/services/loans/loan/", data=data)
 
 	if response.status_code == 400 :
@@ -275,6 +277,8 @@ if __name__ == "__main__":
 		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
 		title, links, metadata = get_book_infos(session, url)
+		if title is None or links is None or metadata is None:
+			continue
 
 		directory = os.path.join(d, title)
 		# Handle the case where multiple books with the same name are downloaded
