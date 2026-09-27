@@ -81,6 +81,8 @@ optional arguments:
                         Maximum number of threads, [default 50]
   -j, --jpg             Output to individual JPG's rather than a PDF
   -m, --meta            Output the metadata of the book to a json file
+  -P, --print-disabled  Try to download books restricted to patrons with print
+                        disabilities (requires a whitelisted account)
 ```
 The `email` and `password` fields are required, so to use this script you must have a registered account on archive.org.
 The `-r` argument specifies the resolution of the images (0 is the best quality).

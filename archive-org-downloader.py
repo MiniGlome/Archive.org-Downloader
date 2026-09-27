@@ -21,15 +21,17 @@ def display_error(response, message):
 	print(response.text)
 	exit()
 
-def get_book_infos(session, url):
+def get_book_infos(session, url, allow_print_disabled=False):
 	r = session.get(url).text
 	infos_url = "https:" + r.split('"url":"')[1].split('"')[0].replace("\\u0026", "&")
 	response = session.get(infos_url)
 	data = response.json()['data']
 	is_print_disabled_only = data.get('lendingInfo', {}).get('isPrintDisabledOnly', False)
-	if is_print_disabled_only:	
-		print("[-] You cannot download this book. It is only available to patrons with print disabilities.")
-		return None, None, None
+	if is_print_disabled_only:
+		if not allow_print_disabled:
+			print("[-] You cannot download this book. It is only available to patrons with print disabilities.")
+			return None, None, None
+		print("[!] This book is only available to patrons with print disabilities, continuing anyway.")
 	title = data['brOptions']['bookTitle'].strip().replace(" ", "_")
 	title = ''.join( c for c in title if c not in '<>:"/\\|?*' ) # Filter forbidden chars in directory names (Windows & Linux)
 	title = title[:150] # Trim the title to avoid long file names	
@@ -231,6 +233,7 @@ if __name__ == "__main__":
 	my_parser.add_argument('-t', '--threads', help="Maximum number of threads, [default 50]", type=int, default=50)
 	my_parser.add_argument('-j', '--jpg', help="Output to individual JPG's rather than a PDF", action='store_true')
 	my_parser.add_argument('-m', '--meta', help="Output the metadata of the book to a json file (-j option required)", action='store_true')
+	my_parser.add_argument('-P', '--print-disabled', help="Try to download books restricted to patrons with print disabilities (requires a whitelisted account)", action='store_true')
 
 	if len(sys.argv) == 1:
 		my_parser.print_help(sys.stderr)
@@ -276,7 +279,7 @@ if __name__ == "__main__":
 		print("="*40)
 		print(f"Current book: https://archive.org/details/{book_id}")
 		session = loan(session, book_id)
-		title, links, metadata = get_book_infos(session, url)
+		title, links, metadata = get_book_infos(session, url, args.print_disabled)
 		if title is None or links is None or metadata is None:
 			continue
 
