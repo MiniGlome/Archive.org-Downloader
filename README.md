@@ -88,6 +88,9 @@ The `email` and `password` fields are required, so to use this script you must h
 The `-r` argument specifies the resolution of the images (0 is the best quality).
 The PDF are downloaded in the current folder
 
+### Print-disabled books
+If you get `You cannot download this book. It is only available to patrons with print disabilities.`, the book is restricted and a normal account cannot borrow it. You need an archive.org account with print-disabled access, which you can request from archive.org, then run the script with `-P`. Alternatively, [archive-dl.com](https://archive-dl.com/) handles these books for you.
+
 ### Example
 This command will download the 3 books as pdf in the best possible quality. To only download the individual images you can use `--jpg`.
 ```sh
